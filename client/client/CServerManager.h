@@ -6,7 +6,7 @@
 #include <string>
 
 #define PORT_NUMBER 8080
-#define HOST_IP "218.236.53.10"
+#define HOST_IP "127.0.0.1"
 
 using namespace std;
 
@@ -16,7 +16,7 @@ class ServerManager
 public:
 	void Initalize();
 	void SocketCreate();
-	void ConverIP();
+	void ConvertIP();
 	void Connect();
 	void Send();
 	void Receive(char* data);

@@ -1,4 +1,5 @@
 #include "CServerManager.h"
+#include <stdio.h>
 
 ServerManager::ServerManager()
 {
@@ -32,12 +33,13 @@ void ServerManager::SocketCreate()
 	}
 }
 
-void ServerManager::ConverIP()
+void ServerManager::ConvertIP()
 {
 	mServerIP = HOST_IP;
 
 	mServerAddr.sin_family = AF_INET;
 	mServerAddr.sin_port = htons(PORT_NUMBER);
+
 	INT error = inet_pton(AF_INET, mServerIP.c_str(), &(mServerAddr.sin_addr));
 
 	if (!error)
@@ -51,7 +53,8 @@ void ServerManager::ConverIP()
 
 void ServerManager::Connect()
 {
-	int iConnect = connect(mSocket, (sockaddr*)(&mServerAddr), sizeof(mServerAddr));
+	socklen_t len = (socklen_t)sizeof(mServerAddr);
+	int iConnect = connect(mSocket, (sockaddr*)&mServerAddr, len);
 	if (iConnect == SOCKET_ERROR)
 	{
 		std::cout << "Error!" << std::endl;
@@ -66,10 +69,10 @@ void ServerManager::Connect()
 void ServerManager::Send()
 {
 	// 소켓 데이터 버퍼에 send
-	char chat[256] = {};
-	std::cin >> chat;
+	char test[256];
+	gets_s(test);
 
-	int iSent = send(mSocket, chat, 256, 0);
+	int iSent = send(mSocket, test, sizeof(test), 0);
 	if (iSent == SOCKET_ERROR)
 	{
 		std::cout << "Error!" << std::endl;
@@ -80,8 +83,7 @@ void ServerManager::Send()
 		exit(1);
 	}
 
-	memset(chat, 0, sizeof(chat));
-
+	ZeroMemory(test, sizeof(test));
 	//Receive(chat);
 }
 

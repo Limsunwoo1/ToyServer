@@ -6,7 +6,7 @@ int main()
 {
 	GETSINGLE(ServerManager)->Initalize();
 	GETSINGLE(ServerManager)->SocketCreate();
-	GETSINGLE(ServerManager)->ConverIP();
+	GETSINGLE(ServerManager)->ConvertIP();
 	GETSINGLE(ServerManager)->Connect();
 
 	while (1)

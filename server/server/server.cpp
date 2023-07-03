@@ -5,14 +5,16 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>>
 #include <list>
+#include <thread>
 
 #define PORT_NUMBER 8080
-#define HOST_IP "218.236.53.10"
+#define HOST_IP "127.0.0.1"
 
 
 std::list<SOCKET> soketList;
 SOCKET ServerSocket;
 
+bool ClientHandler(SOCKET sock);
 int main()
 {
 	// was 초기화
@@ -71,9 +73,11 @@ int main()
 	{
 		sockaddr_in clientAddr;
 		SOCKET clientSocket;
-		int clientSize = sizeof(clientAddr);
+		socklen_t clientSize = (socklen_t)sizeof(clientAddr);
 
 		clientSocket = accept(ServerSocket, (sockaddr*)&clientAddr, &clientSize);
+		soketList.emplace_back(clientSocket);
+
 		if (clientSocket == INVALID_SOCKET)
 		{
 			int error = WSAGetLastError();
@@ -83,26 +87,10 @@ int main()
 
 			exit(1);
 		}
-		else
-		{
-			int a = 0;
-		}
+		
+		std::thread clientHandle(ClientHandler, clientSocket);
+		clientHandle.detach();
 
-
-		char chat[256] = {};
-		int reciveBytes = recv(clientSocket, chat, 256, 0);
-		if (reciveBytes == SOCKET_ERROR)
-		{
-			std::cout << "Sever_error!" << std::endl;
-
-			for (SOCKET socket : soketList)
-				closesocket(socket);
-
-			exit(1);
-		}
-
-		chat[reciveBytes] = '\0';
-		std::cout << chat << std::endl;
 	}
 
 	for (SOCKET socket : soketList)
@@ -111,4 +99,29 @@ int main()
 	}
 
 	WSACleanup();
+}
+
+bool ClientHandler(SOCKET sock)
+{
+	soketList.emplace_back(sock);
+	char buf[256] = {};
+
+	while (1)
+	{
+		for (SOCKET sock : soketList)
+		{
+			INT iReceive = recv(sock, buf, 256, 0);
+			if (iReceive == SOCKET_ERROR)
+			{
+				std::cout << "Error!" << std::endl;
+				return false;
+			}
+
+			std::cout << buf << std::endl;
+		}
+
+		ZeroMemory(buf, sizeof(buf), 0);
+	}
+
+	return true;
 }
