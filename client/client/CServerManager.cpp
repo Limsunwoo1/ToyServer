@@ -35,7 +35,17 @@ void ServerManager::SocketCreate()
 
 void ServerManager::ConvertIP()
 {
-	mServerIP = HOST_IP;
+	mServerIP = "";
+
+	std::cout << "연결 될 서버 IP 주소를 입력해주세요 : ";
+	std::cin >> mServerIP;
+	if (mServerIP.find("local") != std::string::npos
+		|| mServerIP.find("LOCAL") != std::string::npos
+		|| mServerIP.find("Local") != std::string::npos)
+	{
+		mServerIP = HOST_IP;
+	}
+	//mServerIP = HOST_IP;
 
 	mServerAddr.sin_family = AF_INET;
 	mServerAddr.sin_port = htons(PORT_NUMBER);
