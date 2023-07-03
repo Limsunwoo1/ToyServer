@@ -103,23 +103,29 @@ int main()
 
 bool ClientHandler(SOCKET sock)
 {
-	soketList.emplace_back(sock);
 	char buf[256] = {};
 
 	while (1)
 	{
-		for (SOCKET sock : soketList)
+		INT iReceive = recv(sock, buf, 256, 0);
+
+		if (iReceive == SOCKET_ERROR)
 		{
-			INT iReceive = recv(sock, buf, 256, 0);
-			if (iReceive == SOCKET_ERROR)
+			std::cout << "Error!" << std::endl;
+			return false;
+		}
+
+		for (SOCKET sendsock : soketList)
+		{
+			INT iSend = send(sendsock, buf, 256, 0);
+			if (iSend == SOCKET_ERROR)
 			{
 				std::cout << "Error!" << std::endl;
 				return false;
 			}
-
-			std::cout << buf << std::endl;
 		}
 
+		std::cout << buf << std::endl;
 		ZeroMemory(buf, sizeof(buf), 0);
 	}
 

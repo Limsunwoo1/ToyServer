@@ -19,7 +19,7 @@ public:
 	void ConvertIP();
 	void Connect();
 	void Send();
-	void Receive(char* data);
+	void Receive();
 	void Clear();
 	
 

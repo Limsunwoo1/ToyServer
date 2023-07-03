@@ -84,13 +84,13 @@ void ServerManager::Send()
 	}
 
 	ZeroMemory(test, sizeof(test));
-	//Receive(chat);
 }
 
-void ServerManager::Receive(char* data)
+void ServerManager::Receive()
 {
 	// 서버에 소켓데이터 버퍼 수신
-	int iRecv = recv(mSocket, data, 256, 0);
+	char buf[256] = {};
+	int iRecv = recv(mSocket, buf, 256, 0);
 	if (iRecv == SOCKET_ERROR)
 	{
 		int test = WSAGetLastError();
@@ -103,7 +103,7 @@ void ServerManager::Receive(char* data)
 		exit(1);
 	}
 
-	std::cout << data << std::endl;
+	std::cout << "서버로 부터 : " << buf << std::endl;
 }
 
 void ServerManager::Clear()
