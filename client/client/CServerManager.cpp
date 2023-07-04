@@ -14,7 +14,7 @@ void ServerManager::Initalize()
 	mVersion = MAKEWORD(2, 2);
 	if (WSAStartup(mVersion, &mWSData) != 0)
 	{
-		std::cout << "Error!" << std::endl;
+		std::cout << "InitError!" << std::endl;
 
 		WSACleanup();
 		exit(1);
@@ -26,7 +26,7 @@ void ServerManager::SocketCreate()
 	mSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (mSocket == INVALID_SOCKET)
 	{
-		std::cout << "Error!" << std::endl;
+		std::cout << "SocketCreateError!" << std::endl;
 
 		WSACleanup();
 		exit(1);
@@ -38,7 +38,7 @@ void ServerManager::ConvertIP()
 	mServerIP = "";
 
 	std::cout << "연결 될 서버 IP 주소를 입력해주세요 : ";
-	char serverIP[_MAX_PATH];
+	char serverIP[_MAX_PATH] = {};
 	gets_s(serverIP);
 	mServerIP = string(serverIP);
 
@@ -58,7 +58,7 @@ void ServerManager::ConvertIP()
 
 	if (!error)
 	{
-		std::cout << "Error!" << std::endl;
+		std::cout << "ConvertError!" << std::endl;
 
 		closesocket(mSocket);
 		WSACleanup();
@@ -71,7 +71,7 @@ void ServerManager::Connect()
 	int iConnect = connect(mSocket, (sockaddr*)&mServerAddr, len);
 	if (iConnect == SOCKET_ERROR)
 	{
-		std::cout << "Error!" << std::endl;
+		std::cout << "ConnectError!" << std::endl;
 
 		closesocket(mSocket);
 		WSACleanup();
@@ -80,45 +80,31 @@ void ServerManager::Connect()
 	}
 
 	cout << "ID 를 입력하세요 : ";
-	char nameData[MAX_NAME_SIZE];
+	char nameData[MAX_NAME_SIZE] = {};
 	gets_s(nameData);
-	mClientName = nameData;
+	mClientName = string(nameData);
 	
 
 	std::cout << "Client Connect.." << std::endl;
+
+	// 로그인 패킷 전송 람다 함수
+	function<void()> loginFun = [this]() {
+		Login_Packet packet = {};
+		packet.type = ServerDataType::LoginData;
+		packet.name = GetClientName();
+
+		PushSend((void*)&packet);
+	};
+	loginFun();
 	//if(getsockopt())
-}
-
-void ServerManager::Send()
-{
-	// 소켓 데이터 버퍼에 send
-	eTCP_Data<char> testData = {};
-	char chatBuf[256] = {};
-	gets_s(chatBuf);
-
-	testData.type = ServerDataType::ChatMessege;
-	testData.Name = mClientName;
-	testData.Data = chatBuf;
-	PushData((void*)&testData);
-	
-	int iSent = send(mSocket, reinterpret_cast<char*>(mSendData), sizeof(mSendData), 0);
-	if (iSent == SOCKET_ERROR)
-	{
-		std::cout << "SendError!" << std::endl;
-
-		closesocket(mSocket);
-		WSACleanup();
-
-		exit(1);
-	}
-
-	ZeroMemory(mSendData, sizeof(mSendData));
 }
 
 void ServerManager::Receive()
 {
 	// 서버에 소켓데이터 버퍼 수신
-	int iRecv = recv(mSocket, reinterpret_cast<char*>(mReceiveData), MAX_DATA_SIZE, 0);
+	char buf[1024] = {};
+
+	int iRecv = recv(mSocket, reinterpret_cast<char*>(buf), MAX_DATA_SIZE, 0);
 	if (iRecv == SOCKET_ERROR)
 	{
 		int test = WSAGetLastError();
@@ -133,48 +119,117 @@ void ServerManager::Receive()
 
 	if (iRecv != 0)
 	{
-		thread receiveThread(&ServerManager::ReceiveEvent, this);
-		receiveThread.detach();
+		thread receiveThread([&buf,this]()
+			{
+				int* dataType = reinterpret_cast<int*>(buf);
+				int type = *dataType;
+
+				switch ((ServerDataType)type)
+				{
+				case ServerDataType::LoginData:
+				{
+					Login_Packet* chatData = reinterpret_cast<Login_Packet*>(buf);
+					cout << endl;
+					cout << chatData->name << " 님이 입장하였습니다" << endl;
+					std::cout << "메세지 입력 : ";
+				}
+				break;
+				case ServerDataType::LogoutData:
+				{
+					Logout_Packet* chatData = reinterpret_cast<Logout_Packet*>(buf);
+					cout << endl;
+					cout << chatData->name << " 님의 퇴장하였습니다" <<endl;
+					std::cout << "메세지 입력 : ";
+				}
+				break;
+				case ServerDataType::ChatMessege:
+				{
+					ChatMassege_Packet* chatData = reinterpret_cast<ChatMassege_Packet*>(buf);
+					cout << endl;
+					cout << chatData->name << " 님의 메세지 : " << chatData->Messege << endl;
+					std::cout << "메세지 입력 : ";
+				}
+				break;
+
+				case ServerDataType::WhisperMessege:
+				{
+					WhisperMessege_Packet* whisperData = reinterpret_cast<WhisperMessege_Packet*>(buf);
+					cout << endl;
+					cout << whisperData->name << " 님의 귓속말 메세지 : " << whisperData->Messege << endl;
+					std::cout << "메세지 입력 : ";
+				}
+					break;
+
+				case ServerDataType::DamegeData:
+
+					break;
+
+				case ServerDataType::PositionData:
+
+					break;
+				case ServerDataType::RigidbodyData:
+
+					break;
+
+				default:
+					break;
+				}
+
+				return;
+			});
+		receiveThread.join();
 	}
 }
 
-void ServerManager::ReceiveEvent()
+void ServerManager::PushSend(void* data)
 {
-	if (mReceiveData == nullptr)
-		return;
+	int* type = reinterpret_cast<int*> (data);
 
-
-	int* dataType = reinterpret_cast<int*>(mReceiveData);
-	int type = *dataType;
-
-	switch ((ServerDataType)type)
+	int bufSize = 0;
+	switch ((ServerDataType)*type)
 	{
-	case ServerDataType::ChatMessege :
-	{
-		eTCP_Data<char>* chatData = reinterpret_cast<eTCP_Data<char>*>(mReceiveData);
-		cout << chatData->Name << " 님의 메세지 : " << chatData->Data << endl;
-	}
-		break;
-
+	case ServerDataType::LoginData:			bufSize = sizeof(Login_Packet);				break;
+	case ServerDataType::LogoutData:		bufSize = sizeof(Logout_Packet);			break;
+	case ServerDataType::ChatMessege:		bufSize = sizeof(ChatMassege_Packet);		break;
+	case ServerDataType::WhisperMessege:	bufSize = sizeof(WhisperMessege_Packet);	break;
+	case ServerDataType::PositionData:		bufSize = sizeof(Position_Packet);			break;
+	case ServerDataType::AnimationData:		bufSize = sizeof(Animation_Packet);			break;
 	case ServerDataType::DamegeData:
-
-		break;
-
-	case ServerDataType::PostionData:
-
+	{
+	}
 		break;
 	case ServerDataType::RigidbodyData:
-
-		break;
-
-	default:
-		break;
+	{
 	}
+		break;
+	};
 
-	ZeroMemory(mReceiveData, sizeof(mReceiveData));
+	INT isend = send(mSocket, reinterpret_cast<char*>(data), bufSize, 0);
+	if (isend == SOCKET_ERROR)
+	{
+		cout << "SendError...!" << endl;
+
+		closesocket(mSocket);
+		WSACleanup();
+
+		exit(1);
+		return;
+	}
+}
+
+void ServerManager::Rlease()
+{
+	Logout_Packet packet = {};
+	packet.type = ServerDataType::LogoutData;
+	packet.name = GetClientName();
+
+	PushSend((void*)&packet);
+
+	Clear();
 }
 
 void ServerManager::Clear()
 {
-	
+	closesocket(mSocket);
+	WSACleanup();
 }

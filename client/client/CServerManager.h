@@ -1,6 +1,5 @@
 #pragma once
-#include "def.h"
-#include "enums.h"
+#include "Engine.h"
 #include <iostream>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -21,24 +20,17 @@ public:
 	void ConvertIP();
 	void Connect();
 	void Clear();
-	void Send();
 	void Receive();
+	void PushSend(void* data);
+
+	void Rlease();
 	
-	void ReceiveEvent();
-
-
-	
-	GETSET(const WSADATA, mWSData, WSData)
-	GETSET(const WORD, mVersion, Version)
-	GETSET(const SOCKET, mSocket, Socket)
-	GETSET(const sockaddr_in, mServerAddr, ServerAddr)
-
-	GETSET(const string& , mServerIP, ServerIP)
-
-	void PushData(void* data)
-	{
-		mSendData = data;
-	}
+	GETSET(const WSADATA,		mWSData, WSData)
+	GETSET(const WORD,			mVersion, Version)
+	GETSET(const SOCKET,		mSocket, Socket)
+	GETSET(const sockaddr_in,	mServerAddr, ServerAddr)
+	GETSET(const string& ,		mServerIP, ServerIP)
+	GETSET(const string&,		mClientName, ClientName)
 
 private:
 	WSADATA				mWSData;
@@ -46,7 +38,7 @@ private:
 	SOCKET				mSocket;
 	sockaddr_in			mServerAddr;
 
-	char*				mClientName;
+	string				mClientName;
 	string				mServerIP;
 
 	void*				mSendData;
