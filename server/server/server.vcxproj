@@ -133,9 +133,7 @@
     <ClCompile Include="SimpleServer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Packet\Packet.h" />
     <ClInclude Include="def.h" />
-    <ClInclude Include="Engine.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="SimpleServer.h" />
   </ItemGroup>

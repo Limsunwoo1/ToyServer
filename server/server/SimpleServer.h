@@ -1,5 +1,6 @@
 #pragma once
-#include "Engine.h"
+#include "def.h"
+#include "enums.h"
 #include <iostream>
 #include <WinSock2.h>
 #include <ws2tcpip.h>>
@@ -15,7 +16,9 @@
 using namespace std;
 using SocketList = list<SOCKET>;
 using SocketPair = pair<SOCKET, SOCKET>;
-using SocketMap = map<string, SOCKET>;
+using SocketMap = map<wstring, SOCKET>;
+
+
 
 
 class SimpleServer
