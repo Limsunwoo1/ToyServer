@@ -1,12 +1,13 @@
 #pragma once
 
-enum class ServerDataType : char
+enum class ServerDataType : int
 {
 	ChatMessege,
 	PostionData,
 	DamegeData,
-	RegidbodyData,
+	RigidbodyData,
 };
+
 
 template<typename T>
 struct eTCP_Data
@@ -16,11 +17,12 @@ struct eTCP_Data
 	char* Name;
 	T* Data;
 
+	
 	// »ý¼º
-	TCP_Data() : type(ChatMessege), Name(nullptr), Data(nullptr) {};
-	TCP_Data(ServerDataType _type, char* _name, T* _data) : type(_type), Name(_name), Data(data) {};
+	eTCP_Data() : type(ServerDataType::ChatMessege), Name(nullptr), Data(nullptr) {};
+	eTCP_Data(ServerDataType _type, char* _name, T* _data) : type(_type), Name(_name), Data(_data) {};
 
 	void SetType(ServerDataType inType) { type = inType; }
-	void SetName(char* inName) { Name = InName; }
-	void SetName(T* inData) { Data = inData; }
+	void SetName(char* inName) { Name = inName; }
+	void SetData(T* inData) { Data = inData; }
 };

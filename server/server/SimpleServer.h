@@ -1,5 +1,6 @@
 #pragma once
 #include "def.h"
+#include "enums.h"
 #include <iostream>
 #include <WinSock2.h>
 #include <ws2tcpip.h>>

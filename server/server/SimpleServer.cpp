@@ -1,4 +1,5 @@
 #include "SimpleServer.h"
+#include <bitset>
 
 void SimpleServer::Initalize()
 {
@@ -87,6 +88,7 @@ void SimpleServer::Accept()
 
 		thread clientHandle([this, &clientSocket]()
 		{
+			cout << clientSocket << " - 소켓번호 " << endl;
 			ClientHandler(clientSocket);
 		});
 		clientHandle.detach();
@@ -95,24 +97,64 @@ void SimpleServer::Accept()
 
 INT SimpleServer::SendData(SOCKET sock, void* data, int dataLen, int flags)
 {
-	INT iReceive = send(sock, (char*)data, dataLen, flags);
-	if (iReceive == SOCKET_ERROR)
+	INT iSend = send(sock, reinterpret_cast<char*>(data), dataLen, flags);
+	if (iSend == SOCKET_ERROR)
 	{
 		std::cout << "SendError...!" << std::endl;
 	}
 
-	return iReceive;
+	return iSend;
 }
 
 INT SimpleServer::ReceiveData(SOCKET sock, void* data, int dataLen, int flags)
 {
-	INT iSend = recv(sock, (char*)data, dataLen, flags);
-	if (iSend == SOCKET_ERROR)
+	INT iReceive = recv(sock, reinterpret_cast<char*>(data), dataLen, flags);
+	if (iReceive == SOCKET_ERROR)
 	{
 		std::cout << "ReceiveError...!" << std::endl;
+		return SOCKET_ERROR;
 	}
+	
+	int* dataType = reinterpret_cast<int*>(data);
+	int type = *dataType;
 
-	return iSend;
+
+	switch ((ServerDataType)type)
+	{
+	case ServerDataType::ChatMessege: 
+	{
+		eTCP_Data<char>* tctData = reinterpret_cast<eTCP_Data<char>*>(data);
+		// 스레드로 함수 실행
+		std::thread ChatThread([this,&tctData, sock, data, dataLen]() {
+			std::cout << tctData->Name << " 님의 메세지 : " << tctData->Data << std::endl;
+
+			for (SOCKET sock : mAllSocketList)
+			{
+				SendData(sock, data, dataLen);
+			}
+			});
+		ChatThread.detach();
+	}
+		break;
+
+	case ServerDataType::DamegeData:
+
+		break;
+	case ServerDataType::PostionData:
+
+		break;
+	case ServerDataType::RigidbodyData:
+
+		break;
+	default:
+		break;
+	}
+	
+
+	
+	
+
+	return iReceive;
 }
 
 void SimpleServer::EXIT()
@@ -127,11 +169,11 @@ void SimpleServer::EXIT()
 
 bool SimpleServer::ClientHandler(SOCKET sock)
 {
-	char buf[256] = {};
+	void* buf = nullptr;
 
 	while (1)
 	{
-		INT iReceive = ReceiveData(sock, (void*)buf, 256);
+		INT iReceive = ReceiveData(sock, buf, 2048);
 
 		if (iReceive == SOCKET_ERROR)
 		{
