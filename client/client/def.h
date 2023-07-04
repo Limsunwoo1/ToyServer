@@ -33,12 +33,12 @@ __TYPE__ Get##__METHODNAME__()	const				 \
 	return __TARGET__;								 \
 }													 \
 													 \
-void Set##__METHODNAME__(const __TYPE__ value)		 \
+void Set##__METHODNAME__(__TYPE__ value)			 \
 {													 \
 	__TARGET__ = value;								 \
 }													 \
 
 
-#define MAX_DATA_SIZE		2048
+#define MAX_DATA_SIZE		1024
 #define MAX_NAME_SIZE		20
 #define MAX_PASSWORD_SIZE	40

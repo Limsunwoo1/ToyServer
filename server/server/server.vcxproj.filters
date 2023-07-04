@@ -32,5 +32,11 @@
     <ClInclude Include="enums.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="..\Packet\Packet.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

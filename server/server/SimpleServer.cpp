@@ -1,5 +1,7 @@
 #include "SimpleServer.h"
 #include <bitset>
+#include <string>
+
 
 void SimpleServer::Initalize()
 {
@@ -111,7 +113,25 @@ INT SimpleServer::ReceiveData(SOCKET sock, void* data, int dataLen, int flags)
 	INT iReceive = recv(sock, reinterpret_cast<char*>(data), dataLen, flags);
 	if (iReceive == SOCKET_ERROR)
 	{
-		std::cout << "ReceiveError...!" << std::endl;
+		std::cout << sock << " - 소켓의 연결을 종료 합니다.." << std::endl;
+		
+		SocketList::iterator listiter = std::find(mAllSocketList.begin(), mAllSocketList.end(), sock);
+		if (listiter != mAllSocketList.end())
+		{
+
+			mAllSocketList.erase(listiter);
+		}
+
+		for (auto& mapIter : mAllSocketMap)
+		{
+			if (mapIter.second == sock)
+			{
+				// 맵에 find 로 찾은iterator로 erase
+				mAllSocketMap.erase(mAllSocketMap.find(mapIter.first));
+				break;
+			}
+		}
+
 		return SOCKET_ERROR;
 	}
 	
@@ -121,36 +141,110 @@ INT SimpleServer::ReceiveData(SOCKET sock, void* data, int dataLen, int flags)
 
 	switch ((ServerDataType)type)
 	{
-	case ServerDataType::ChatMessege: 
+	case ServerDataType::LoginData:
 	{
-		eTCP_Data<char>* tctData = reinterpret_cast<eTCP_Data<char>*>(data);
-		// 스레드로 함수 실행
-		std::thread ChatThread([this,&tctData, sock, data, dataLen]() {
-			std::cout << tctData->Name << " 님의 메세지 : " << tctData->Data << std::endl;
+		Login_Packet* packet = reinterpret_cast<Login_Packet*>(data);
+		mAllSocketMap.insert(make_pair(packet->name, sock));
 
-			for (SOCKET sock : mAllSocketList)
+		// 스레드로 함수 실행
+		std::thread ChatThread([this, packet, sock, data, dataLen]() {
+			string name = packet->name;
+			std::cout << name << " 님이 입장하였습니다" << std::endl;
+
+			for (SOCKET _sock : mAllSocketList)
 			{
-				SendData(sock, data, dataLen);
+				SendData(_sock, data, sizeof(Login_Packet));
+			}
+
+			});
+		ChatThread.join();
+	}
+		break;
+	case ServerDataType::LogoutData:
+	{
+		Logout_Packet* packet = reinterpret_cast<Logout_Packet*>(data);
+
+		SocketList::iterator listiter = std::find(mAllSocketList.begin(), mAllSocketList.end(), sock);
+		if (listiter != mAllSocketList.end())
+		{
+			mAllSocketList.erase(listiter);
+		}
+
+		SocketMap::iterator mapiter = mAllSocketMap.find(packet->name);
+		if (mapiter != mAllSocketMap.end())
+		{
+			mAllSocketMap.erase(mapiter);
+		}
+
+		// 스레드로 함수 실행
+		std::thread ChatThread([this, packet, sock, data, dataLen]() {
+			std::cout << packet->name << " 님이 퇴장하였습니다" << std::endl;
+
+			for (SOCKET _sock : mAllSocketList)
+			{
+				if (sock == _sock)
+					continue;
+
+				SendData(_sock, data, sizeof(Logout_Packet));
+			}
+
+			});
+		ChatThread.join();
+	}
+		break;
+	case ServerDataType::ChatMessege:
+	{
+		ChatMassege_Packet* packet = reinterpret_cast<ChatMassege_Packet*>(data);
+		// 스레드로 함수 실행
+		std::thread ChatThread([this, packet, sock, data, dataLen]() {
+			std::cout << packet->name << " 님의 메세지 : " << packet->Messege << std::endl;
+
+			for (SOCKET _sock : mAllSocketList)
+			{
+				if (_sock == sock)
+					continue;
+
+				SendData(_sock, data, sizeof(ChatMassege_Packet));
 			}
 			});
-		ChatThread.detach();
+		ChatThread.join();
+	}
+		break;
+
+	case ServerDataType::WhisperMessege:
+	{
+		WhisperMessege_Packet* packet = reinterpret_cast<WhisperMessege_Packet*>(data);
+		// 스레드로 함수 실행
+		std::thread ChatThread([this, packet, sock, data, dataLen]() {
+			SocketMap::iterator iter = mAllSocketMap.find(packet->otherName);
+			if (iter != mAllSocketMap.end())
+			{
+				std::cout << packet->name << " 님의 귓속말 메세지 : " << packet->Messege << std::endl;
+				send(iter->second, reinterpret_cast<char*>(data), dataLen, 0);
+			}
+
+			});
+		ChatThread.join();
 	}
 		break;
 
 	case ServerDataType::DamegeData:
 
 		break;
-	case ServerDataType::PostionData:
+	case ServerDataType::PositionData:
 
 		break;
+
+	case ServerDataType::AnimationData:
+
+		break;
+
 	case ServerDataType::RigidbodyData:
 
 		break;
 	default:
 		break;
 	}
-	
-
 	
 	
 
@@ -169,27 +263,17 @@ void SimpleServer::EXIT()
 
 bool SimpleServer::ClientHandler(SOCKET sock)
 {
-	void* buf = nullptr;
+	char buf[1024] = {};
 
 	while (1)
 	{
-		INT iReceive = ReceiveData(sock, buf, 2048);
+		INT iReceive = ReceiveData(sock, buf, 1024, 0);
 
 		if (iReceive == SOCKET_ERROR)
 		{
 			return false;
 		}
 
-		for (SOCKET sendsock : mAllSocketList)
-		{
-			INT iSend = SendData(sock, buf, 256);
-			if (iSend == SOCKET_ERROR)
-			{
-				return false;
-			}
-		}
-
-		std::cout << buf << std::endl;
 		ZeroMemory(buf, sizeof(buf), 0);
 	}
 
