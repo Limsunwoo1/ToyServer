@@ -131,6 +131,7 @@
   <ItemGroup>
     <ClInclude Include="CServerManager.h" />
     <ClInclude Include="def.h" />
+    <ClInclude Include="enums.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />

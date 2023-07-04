@@ -38,7 +38,10 @@ void ServerManager::ConvertIP()
 	mServerIP = "";
 
 	std::cout << "연결 될 서버 IP 주소를 입력해주세요 : ";
-	std::cin >> mServerIP;
+	char serverIP[_MAX_PATH];
+	gets_s(serverIP);
+	mServerIP = serverIP;
+	
 	if (mServerIP.find("local") != std::string::npos
 		|| mServerIP.find("LOCAL") != std::string::npos
 		|| mServerIP.find("Local") != std::string::npos)
@@ -74,12 +77,16 @@ void ServerManager::Connect()
 
 		exit(1);
 	}
+
+	std::cout << "Client Connect.." << std::endl;
+	//if(getsockopt())
 }
 
 void ServerManager::Send()
 {
 	// 소켓 데이터 버퍼에 send
-	char test[256];
+	
+	char test[256] = {};
 	gets_s(test);
 
 	int iSent = send(mSocket, test, sizeof(test), 0);
@@ -113,7 +120,10 @@ void ServerManager::Receive()
 		exit(1);
 	}
 
-	std::cout << "서버로 부터 : " << buf << std::endl;
+	if (iRecv != 0)
+	{
+		std::cout << "서버로 부터 : " << buf << std::endl;
+	}
 }
 
 void ServerManager::Clear()
