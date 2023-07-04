@@ -28,7 +28,8 @@ int main()
 	while (1)
 	{
 		
-
+		// 나중에 함수화 하여 특정한 상황에
+		// Send한다
 		if (a >= 9999999)
 		{
 			ChatMassege_Packet chat = {};
