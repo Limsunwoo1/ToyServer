@@ -96,7 +96,18 @@ void ServerManager::Connect()
 		PushSend((void*)&packet);
 	};
 	loginFun();
-	//if(getsockopt())
+
+
+	// 리시브 받을 준비
+	std::thread receivethread([this]()
+		{
+			while (1)
+			{
+				Receive();
+			}
+		});
+
+	receivethread.detach();
 }
 
 void ServerManager::Receive()

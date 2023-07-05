@@ -246,8 +246,8 @@ INT SimpleServer::ReceiveData(SOCKET sock, void* data, int dataLen, int flags)
 		break;
 	}
 	
-	
 
+	Sleep(2);
 	return iReceive;
 }
 
